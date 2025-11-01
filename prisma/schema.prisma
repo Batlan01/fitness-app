@@ -30,6 +30,7 @@ model Exercise {
 
   i18n          ExerciseI18n[]
   items         WorkoutItem[]
+  programDayItems ProgramDayItem[]
   logs          Log[]
   tags          ExerciseTag[]
 }
