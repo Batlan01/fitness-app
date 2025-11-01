@@ -5,10 +5,10 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // ha nincs beállítva, nem gond
+  directUrl = env("DIRECT_URL") // ha nincs, nem baj
 }
 
-/* -------------------- USER -------------------- */
+// USER
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -20,7 +20,7 @@ model User {
   logs      Log[]
 }
 
-/* -------------------- EXERCISE -------------------- */
+// EXERCISE
 model Exercise {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -32,18 +32,13 @@ model Exercise {
   isPublic      Boolean  @default(true)
 
   i18n            ExerciseI18n[]
-
-  // WorkoutItem → Exercise kapcsolat (névvel)
   workoutItems     WorkoutItem[]     @relation("ExerciseToWorkoutItem")
-
-  // ProgramDayItem → Exercise kapcsolat (névvel)
   programDayItems  ProgramDayItem[]  @relation("ExerciseToProgramDayItem")
-
-  logs            Log[]
-  tags            ExerciseTag[]
+  logs             Log[]
+  tags             ExerciseTag[]
 }
 
-/* -------------------- EXERCISE I18N -------------------- */
+// EXERCISE I18N
 model ExerciseI18n {
   id          String   @id @default(cuid())
   exerciseId  String
@@ -57,7 +52,7 @@ model ExerciseI18n {
   @@unique([exerciseId, lang])
 }
 
-/* -------------------- TAGS -------------------- */
+// TAGS
 model Tag {
   id   String @id @default(cuid())
   slug String @unique
@@ -74,7 +69,7 @@ model ExerciseTag {
   @@id([exerciseId, tagId])
 }
 
-/* -------------------- WORKOUTS -------------------- */
+// WORKOUTS
 model Workout {
   id         String   @id @default(cuid())
   userId     String?
@@ -93,16 +88,14 @@ model WorkoutItem {
   workoutId  String
   exerciseId String
   orderIdx   Int
-  schemeType String   // reps|time|amrap|emom|rest
-  schemeValue String  // "3x12", "30s", stb.
+  schemeType String   // reps | time | amrap | emom | rest
+  schemeValue String  // pl. "3x12", "30s"
 
   workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-
-  // NÉVVEL jelölt reláció az Exercise-hoz (párja: Exercise.workoutItems)
   exercise  Exercise @relation("ExerciseToWorkoutItem", fields: [exerciseId], references: [id], onDelete: Cascade)
 }
 
-/* -------------------- PROGRAMS -------------------- */
+// PROGRAMS
 model Program {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -136,12 +129,10 @@ model ProgramDayItem {
   schemeValue  String
 
   programDay ProgramDay @relation(fields: [programDayId], references: [id], onDelete: Cascade)
-
-  // NÉVVEL jelölt reláció az Exercise-hoz (párja: Exercise.programDayItems)
   exercise   Exercise   @relation("ExerciseToProgramDayItem", fields: [exerciseId], references: [id], onDelete: Cascade)
 }
 
-/* -------------------- LOGS -------------------- */
+// LOGS
 model Log {
   id           String   @id @default(cuid())
   userId       String
