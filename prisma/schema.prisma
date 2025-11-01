@@ -3,11 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL") // opcionális, ha beállítottad
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // ha nincs beállítva, nem gond
 }
 
+/* -------------------- USER -------------------- */
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -19,6 +20,7 @@ model User {
   logs      Log[]
 }
 
+/* -------------------- EXERCISE -------------------- */
 model Exercise {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -30,12 +32,18 @@ model Exercise {
   isPublic      Boolean  @default(true)
 
   i18n            ExerciseI18n[]
-  items           WorkoutItem[]
-  programDayItems ProgramDayItem[]   // <-- ellenoldali reláció a ProgramDayItem.exercise-hez
+
+  // WorkoutItem → Exercise kapcsolat (névvel)
+  workoutItems     WorkoutItem[]     @relation("ExerciseToWorkoutItem")
+
+  // ProgramDayItem → Exercise kapcsolat (névvel)
+  programDayItems  ProgramDayItem[]  @relation("ExerciseToProgramDayItem")
+
   logs            Log[]
   tags            ExerciseTag[]
 }
 
+/* -------------------- EXERCISE I18N -------------------- */
 model ExerciseI18n {
   id          String   @id @default(cuid())
   exerciseId  String
@@ -49,6 +57,7 @@ model ExerciseI18n {
   @@unique([exerciseId, lang])
 }
 
+/* -------------------- TAGS -------------------- */
 model Tag {
   id   String @id @default(cuid())
   slug String @unique
@@ -65,6 +74,7 @@ model ExerciseTag {
   @@id([exerciseId, tagId])
 }
 
+/* -------------------- WORKOUTS -------------------- */
 model Workout {
   id         String   @id @default(cuid())
   userId     String?
@@ -84,12 +94,15 @@ model WorkoutItem {
   exerciseId String
   orderIdx   Int
   schemeType String   // reps|time|amrap|emom|rest
-  schemeValue String  // "3x12", "30s", "60s" stb.
+  schemeValue String  // "3x12", "30s", stb.
 
   workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
-  exercise  Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  // NÉVVEL jelölt reláció az Exercise-hoz (párja: Exercise.workoutItems)
+  exercise  Exercise @relation("ExerciseToWorkoutItem", fields: [exerciseId], references: [id], onDelete: Cascade)
 }
 
+/* -------------------- PROGRAMS -------------------- */
 model Program {
   id            String   @id @default(cuid())
   slug          String   @unique
@@ -123,9 +136,12 @@ model ProgramDayItem {
   schemeValue  String
 
   programDay ProgramDay @relation(fields: [programDayId], references: [id], onDelete: Cascade)
-  exercise   Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  // NÉVVEL jelölt reláció az Exercise-hoz (párja: Exercise.programDayItems)
+  exercise   Exercise   @relation("ExerciseToProgramDayItem", fields: [exerciseId], references: [id], onDelete: Cascade)
 }
 
+/* -------------------- LOGS -------------------- */
 model Log {
   id           String   @id @default(cuid())
   userId       String
