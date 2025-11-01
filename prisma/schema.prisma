@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") // opcionális, ha beállítottad
 }
 
 model User {
@@ -28,11 +29,11 @@ model Exercise {
   videoUrl      String?
   isPublic      Boolean  @default(true)
 
-  i18n          ExerciseI18n[]
-  items         WorkoutItem[]
-  programDayItems ProgramDayItem[]
-  logs          Log[]
-  tags          ExerciseTag[]
+  i18n            ExerciseI18n[]
+  items           WorkoutItem[]
+  programDayItems ProgramDayItem[]   // <-- ellenoldali reláció a ProgramDayItem.exercise-hez
+  logs            Log[]
+  tags            ExerciseTag[]
 }
 
 model ExerciseI18n {
@@ -65,15 +66,15 @@ model ExerciseTag {
 }
 
 model Workout {
-  id        String   @id @default(cuid())
-  userId    String?
-  title     String
-  isTemplate Boolean @default(false)
-  level     String   @default("beginner")
-  goal      String   @default("general")
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String?
+  title      String
+  isTemplate Boolean  @default(false)
+  level      String   @default("beginner")
+  goal       String   @default("general")
+  createdAt  DateTime @default(now())
 
-  user      User?     @relation(fields: [userId], references: [id])
+  user      User?        @relation(fields: [userId], references: [id])
   items     WorkoutItem[]
 }
 
@@ -82,8 +83,8 @@ model WorkoutItem {
   workoutId  String
   exerciseId String
   orderIdx   Int
-  schemeType String  // reps|time|amrap|emom|rest
-  schemeValue String // e.g. "3x12", "30s", "60s"
+  schemeType String   // reps|time|amrap|emom|rest
+  schemeValue String  // "3x12", "30s", "60s" stb.
 
   workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
   exercise  Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
@@ -107,7 +108,7 @@ model ProgramDay {
   dayNo     Int
   title     String
 
-  program  Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  program  Program        @relation(fields: [programId], references: [id], onDelete: Cascade)
   items    ProgramDayItem[]
 
   @@unique([programId, weekNo, dayNo])
@@ -126,14 +127,14 @@ model ProgramDayItem {
 }
 
 model Log {
-  id          String   @id @default(cuid())
-  userId      String
-  exerciseId  String
-  date        DateTime @default(now())
-  valueReps   Int?
+  id           String   @id @default(cuid())
+  userId       String
+  exerciseId   String
+  date         DateTime @default(now())
+  valueReps    Int?
   valueTimeSec Int?
-  rpe         Int?
-  notes       String?
+  rpe          Int?
+  notes        String?
 
   user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
