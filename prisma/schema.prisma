@@ -1,3 +1,5 @@
+// fix @ 2025-11-01 16:10
+
 generator client {
   provider = "prisma-client-js"
 }
