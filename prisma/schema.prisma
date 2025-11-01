@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+
+  workouts  Workout[]
+  logs      Log[]
+}
+
+model Exercise {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  levelMin      Int      @default(1)
+  levelMax      Int      @default(3)
+  equipment     String   @default("bodyweight")
+  primaryMuscle String   @default("fullbody")
+  videoUrl      String?
+  isPublic      Boolean  @default(true)
+
+  i18n          ExerciseI18n[]
+  items         WorkoutItem[]
+  logs          Log[]
+  tags          ExerciseTag[]
+}
+
+model ExerciseI18n {
+  id          String   @id @default(cuid())
+  exerciseId  String
+  lang        String
+  name        String
+  cue         String?
+  description String?
+
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+
+  @@unique([exerciseId, lang])
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+  exercises ExerciseTag[]
+}
+
+model ExerciseTag {
+  exerciseId String
+  tagId      String
+  exercise   Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([exerciseId, tagId])
+}
+
+model Workout {
+  id        String   @id @default(cuid())
+  userId    String?
+  title     String
+  isTemplate Boolean @default(false)
+  level     String   @default("beginner")
+  goal      String   @default("general")
+  createdAt DateTime @default(now())
+
+  user      User?     @relation(fields: [userId], references: [id])
+  items     WorkoutItem[]
+}
+
+model WorkoutItem {
+  id         String  @id @default(cuid())
+  workoutId  String
+  exerciseId String
+  orderIdx   Int
+  schemeType String  // reps|time|amrap|emom|rest
+  schemeValue String // e.g. "3x12", "30s", "60s"
+
+  workout   Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+  exercise  Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model Program {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  level         String
+  goal          String
+  durationWeeks Int
+  isPublic      Boolean  @default(true)
+
+  days          ProgramDay[]
+}
+
+model ProgramDay {
+  id        String @id @default(cuid())
+  programId String
+  weekNo    Int
+  dayNo     Int
+  title     String
+
+  program  Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  items    ProgramDayItem[]
+
+  @@unique([programId, weekNo, dayNo])
+}
+
+model ProgramDayItem {
+  id           String  @id @default(cuid())
+  programDayId String
+  exerciseId   String
+  orderIdx     Int
+  schemeType   String
+  schemeValue  String
+
+  programDay ProgramDay @relation(fields: [programDayId], references: [id], onDelete: Cascade)
+  exercise   Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model Log {
+  id          String   @id @default(cuid())
+  userId      String
+  exerciseId  String
+  date        DateTime @default(now())
+  valueReps   Int?
+  valueTimeSec Int?
+  rpe         Int?
+  notes       String?
+
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
